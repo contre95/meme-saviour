@@ -22,14 +22,7 @@ func Run(c BotConfig, ms app.MemeSaviour) {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	// updates, err := bot.GetUpdates(context.Background(), u)
-    uConfig := tgbotapi.UpdateConfig{
-    	Offset:         0,
-    	Limit:          0,
-    	Timeout:        0,
-    	AllowedUpdates: []string{},
-    }
-	updates, err := bot.GetUpdates()
+	updates, err := bot.GetUpdates(u)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -42,7 +35,7 @@ func Run(c BotConfig, ms app.MemeSaviour) {
 			// Download the photo
 			// file, err := bot.GetFile(context.Background(), photo.FileID)
 			fConfig := tgbotapi.FileConfig{
-				FileID: "",
+				FileID: "hola123",
 			}
 			file, err := bot.GetFile(fConfig)
 			if err != nil {

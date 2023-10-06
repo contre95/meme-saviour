@@ -1,29 +1,34 @@
 package storage
 
-import "meme-saviour/app"
+import (
+	"log/slog"
+	"meme-saviour/app"
+)
 
-type MockSaviour struct {
+type MockStorage struct {
 	name string
 }
 
-func NewMockSaviour() *MockSaviour {
-	return &MockSaviour{
+func NewMockStorage() *MockStorage {
+	return &MockStorage{
 		name: "Mock",
 	}
 }
 
-func (s MockSaviour) Save(m app.Meme) error {
-	panic("Save method is not implemented")
+func (s MockStorage) Save(m app.Meme) error {
+	slog.Warn("Using Mock storage.", "warn", "nothign will be saved.")
+	slog.Info("Saving file", "storage", s.GetName(), "memeName", m.Name, "path", m.Path, "size", m.Size)
+	return nil
 }
 
-func (s MockSaviour) GetName() string {
+func (s MockStorage) GetName() string {
 	return s.name
 }
 
-func (s MockSaviour) MaxSize() app.Size {
-	panic("MaxSize method is not implemented")
+func (s MockStorage) MaxSize() app.Size {
+	return app.Size(1.0)
 }
 
-func (s MockSaviour) GetRandomMeme() (*app.Meme, error) {
+func (s MockStorage) GetRandomMeme() (*app.Meme, error) {
 	panic("GetRandomMeme method is not implemented")
 }
