@@ -6,14 +6,16 @@ import (
 	"meme-saviour/storage"
 	"meme-saviour/telegram"
 	"os"
+	"strings"
 )
 
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelWarn,
+		// Level: slog.LevelWarn,
 	})))
 	botConfig := telegram.BotConfig{
-		Token: os.Getenv("MEMESAVE_TELEGRAM_TOKEN"),
+		Token:          os.Getenv("BOT_MEMESAVE_TELEGRAM_TOKEN"),
+		ValidUsernames: strings.Split(os.Getenv("BOT_ALLOWED_USERNAMES"), ","),
 	}
 	mockSaviour := storage.NewMockStorage()
 	memeSaviour := app.NewMemeSaviour()
