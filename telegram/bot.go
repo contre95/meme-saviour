@@ -1,84 +1,68 @@
 package telegram
 
 import (
-	"fmt"
-	"io"
 	"log"
-	"net/http"
-	"os"
-	"path/filepath"
+	"meme-saviour/app"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func main() {
-	// Replace with your Telegram Bot API token
-	botToken := os.Getenv("MEMESAVE_TELEGRAM_TOKEN")
+type BotConfig struct {
+	Token string
+}
 
-	// Initialize the bot with your API token
-	bot, err := tgbotapi.NewBotAPI(botToken)
+func Run(c BotConfig, ms app.MemeSaviour) {
+	bot, err := tgbotapi.NewBotAPI(c.Token)
 	if err != nil {
-		log.Panic(err)
+		log.Fatal(err)
 	}
 
-	// Set up updates channel to receive messages and files
+	log.Printf("Authorized on account %s", bot.Self.UserName)
+
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	updates := bot.GetUpdatesChan(u)
-	// if err != nil {
-	// 	log.Panic(err)
-	// }
+	// updates, err := bot.GetUpdates(context.Background(), u)
+    uConfig := tgbotapi.UpdateConfig{
+    	Offset:         0,
+    	Limit:          0,
+    	Timeout:        0,
+    	AllowedUpdates: []string{},
+    }
+	updates, err := bot.GetUpdates()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// Handle incoming updates
-	for update := range updates {
-		if update.Message == nil {
-			continue
-		}
-
-		if update.Message.Photo != nil {
-			// Handle incoming photos
-			photo := (*update.Message.Photo)[len(*update.Message.Photo)-1] // TODO: update this since Chat pirirí uses an old tgbot api
-			fileID := photo.FileID
-
-			// Get the photo file
-			fileConfig := tgbotapi.NewGetFile(fileID) // TODO: update this since Chat pirirí uses an old tgbot api
-			file, err := bot.GetFile(fileConfig)
-			if err != nil {
-				log.Println(err)
-				continue
-			}
+	for _, update := range updates {
+		if update.Message != nil && update.Message.Photo != nil {
+			// Get the largest photo size
+			photo := update.Message.Photo[len(update.Message.Photo)-1]
 
 			// Download the photo
-			fileURL := file.Link(botToken)
-			response, err := http.Get(fileURL)
-			if err != nil {
-				log.Println(err)
-				continue
+			// file, err := bot.GetFile(context.Background(), photo.FileID)
+			fConfig := tgbotapi.FileConfig{
+				FileID: "",
 			}
-			defer response.Body.Close()
-
-			// Create a folder to save the photos
-			saveFolder := "photos"
-			os.MkdirAll(saveFolder, os.ModePerm)
-
-			// Create a file in the folder and save the photo
-			fileName := filepath.Join(saveFolder, fmt.Sprintf("%s.jpg", fileID))
-			outputFile, err := os.Create(fileName)
+			file, err := bot.GetFile(fConfig)
 			if err != nil {
-				log.Println(err)
-				continue
-			}
-			defer outputFile.Close()
-
-			// Copy the downloaded photo data to the output file
-			_, err = io.Copy(outputFile, response.Body)
-			if err != nil {
-				log.Println(err)
-				continue
+				log.Fatal(err)
 			}
 
-			log.Printf("Saved photo: %s\n", fileName)
+			// Create a new Meme struct
+			meme := app.Meme{
+				Size: app.Size(photo.Width),
+				Path: file.FilePath,
+				Name: photo.FileID + ".jpg",
+			}
+
+			// Save the Meme struct using the Saviour interface
+			err = ms.SaveMemeTo("mock", meme)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			log.Printf("Meme saved to %s", meme.Name)
 		}
 	}
 }

@@ -1,4 +1,4 @@
-package main
+package app
 
 type Size float32
 
@@ -9,9 +9,9 @@ type Meme struct {
 	Name string
 }
 
-type Saviour interface {
+type Storage interface {
 	Save(m Meme) error
-	Name() string
+	GetName() string
 	MaxSize() Size
 	GetRandomMeme() (*Meme, error)
 }
