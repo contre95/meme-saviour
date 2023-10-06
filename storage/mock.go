@@ -17,7 +17,7 @@ func NewMockStorage() *MockStorage {
 
 func (s MockStorage) Save(m app.Meme) error {
 	slog.Warn("Using Mock storage.", "warn", "nothign will be saved.")
-	slog.Info("Saving file", "storage", s.GetName(), "memeName", m.Name, "path", m.Path, "size", m.Size)
+	slog.Info("Saving file", "storage", s.GetName(), "name", m.Name, "size", m.Size, "link", m.Link)
 	return nil
 }
 

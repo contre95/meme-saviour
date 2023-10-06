@@ -3,9 +3,8 @@ package app
 type Size float32
 
 type Meme struct {
-	// Image []byte // Not sure if we are gonna need this.
+	Link string
 	Size Size
-	Path string
 	Name string
 }
 

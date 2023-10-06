@@ -29,7 +29,7 @@ func (m *MemeSaviour) SaveMemeTo(storagekey string, meme Meme) error {
 			return nil
 		}
 	}
-	slog.Info("Meme save.", "path", meme.Path)
+	slog.Info("Meme save.", "name", meme.Name)
 	return nil
 }
 
