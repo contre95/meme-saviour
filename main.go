@@ -48,5 +48,11 @@ func main() {
 		Token:          os.Getenv("TELEGRAM_TOKEN"),
 		ValidUsernames: strings.Split(usernames, ","),
 	}
-	telegram.Run(botConfig, *memeSaviour)
+	if memeSaviour.HasRegisteredStorages() {
+		telegram.Run(botConfig, *memeSaviour)
+	} else {
+		slog.Error("Please set up at least one Storage for Meme Saviour to work.")
+		os.Exit(1)
+
+	}
 }

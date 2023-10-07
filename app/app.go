@@ -21,6 +21,10 @@ func (m *MemeSaviour) RegisterStorage(s Storage) {
 	m.storage[s.GetName()] = s
 }
 
+func (m *MemeSaviour) HasRegisteredStorages() bool {
+	return len(m.storage) > 0
+}
+
 func (m *MemeSaviour) SaveMemeTo(storagekey string, meme Meme) error {
 	s, keyExists := m.storage[storagekey]
 	if keyExists {
