@@ -1,8 +1,5 @@
 FROM golang:alpine AS builder
 
-ENV CGO_ENABLED=1
-RUN apk add --no-cache gcc musl-dev
-
 # Copy files
 WORKDIR /app
 ADD . .

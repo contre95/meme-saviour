@@ -1,0 +1,35 @@
+# Save the output of this file and use kubectl create -f to import
+# it into Kubernetes.
+#
+# Created with podman-4.6.2
+
+# NOTE: If you generated this yaml from an unprivileged and rootless podman container on an SELinux
+# enabled system, check the podman generate kube man page for steps to follow to ensure that your pod/container
+# has the right permissions to access the volumes added.
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2023-10-07T16:20:18Z"
+  labels:
+    app: meme-saviour-pod
+  name: meme-saviour-pod
+spec:
+  containers:
+  - env:
+    - name: TELEGRAM_TOKEN
+      value: <telegra-api-token>
+    - name: LOCAL_STORAGE
+      value: "1"
+    - name: TELEGRAM_ALLOWED_USERNAMES
+      value: user1,user2
+    image: docker.io/contre95/memesaviour:latest
+    name: memesaviour
+    volumeMounts:
+    - mountPath: /data
+      name: home-canus-Code-ContreCode-meme-saviour-data-host-0
+  volumes:
+  - hostPath:
+      path: /home/canus/Code/ContreCode/meme-saviour/data
+      type: Directory
+    name: home-canus-Code-ContreCode-meme-saviour-data-host-0
