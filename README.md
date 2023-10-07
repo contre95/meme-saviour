@@ -28,8 +28,8 @@ Run it on a container.
 podman container run --rm \
 	--name memesaviour
 	-v "$(pwd)/data:/data" \
-	-e TELEGRAM_TOKEN=6499033784:AAEKT7xBECzIlGlg14hUCbBNmo \
+	-e TELEGRAM_TOKEN=<telegram-bot-token> \
 	-e LOCAL_STORAGE=1 \
-	-e TELEGRAM_ALLOWED_USERNAMES=contre \
+	-e TELEGRAM_ALLOWED_USERNAMES=user1,user2,user3 \
 	docker.io/contre95/memesaviour
 ```
