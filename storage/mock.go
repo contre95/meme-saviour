@@ -25,10 +25,6 @@ func (s MockStorage) GetName() string {
 	return s.name
 }
 
-func (s MockStorage) MaxSize() app.Size {
-	return app.Size(1.0)
-}
-
 func (s MockStorage) GetRandomMeme() (*app.Meme, error) {
 	panic("GetRandomMeme method is not implemented")
 }

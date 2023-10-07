@@ -7,18 +7,46 @@ import (
 	"meme-saviour/telegram"
 	"os"
 	"strings"
+	"time"
+
+	"github.com/lmittmann/tint"
 )
 
 func main() {
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		// Level: slog.LevelWarn,
-	})))
-	botConfig := telegram.BotConfig{
-		Token:          os.Getenv("BOT_MEMESAVE_TELEGRAM_TOKEN"),
-		ValidUsernames: strings.Split(os.Getenv("BOT_ALLOWED_USERNAMES"), ","),
-	}
-	mockSaviour := storage.NewMockStorage()
+	// Standarize logging configuration
+	slog.SetDefault(slog.New(
+		tint.NewHandler(os.Stderr, &tint.Options{
+			Level:      slog.LevelDebug,
+			TimeFormat: time.Kitchen,
+		}),
+	))
+
+	// Use cases
 	memeSaviour := app.NewMemeSaviour()
-	memeSaviour.RegisterStorage(mockSaviour)
+
+	// Local Storage
+	if os.Getenv("LOCAL_STORAGE") == "1" {
+		path := os.Getenv("LOCAL_STORAGE_PATH")
+		if path == "" {
+			path = "/data"
+		}
+		localStorage := storage.NewLocalStorage(path, 50.0)
+		memeSaviour.RegisterStorage(localStorage)
+	}
+
+	// Mock storage
+	// mockStorage := storage.NewMockStorage()
+	// memeSaviour.RegisterStorage(mockStorage)
+
+	// Bot configuration
+	usernames := os.Getenv("TELEGRAM_ALLOWED_USERNAMES")
+	if usernames == "" {
+		slog.Error("TELEGRAM_ALLOWED_USERNAMES not set.")
+		os.Exit(1)
+	}
+	botConfig := telegram.BotConfig{
+		Token:          os.Getenv("TELEGRAM_TOKEN"),
+		ValidUsernames: strings.Split(usernames, ","),
+	}
 	telegram.Run(botConfig, *memeSaviour)
 }

@@ -4,6 +4,8 @@ import (
 	"log"
 	"log/slog"
 	"meme-saviour/app"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -15,10 +17,24 @@ type BotConfig struct {
 	ValidUsernames []string
 }
 
+func (c *BotConfig) validate() {
+	if len(c.Token) == 0 {
+		slog.Error("Telegram token not set.")
+		log.Fatal("Telegram token not set.")
+	}
+	slog.Info("Valid usernames set.", "usernames", c.ValidUsernames, "count", len(c.ValidUsernames))
+	if len(c.ValidUsernames) == 0 {
+		slog.Error("No valid Telegram username take")
+		log.Fatal("No valid Telegram username take.")
+	}
+}
+
 func Run(c BotConfig, ms app.MemeSaviour) {
+	c.validate()
 	bot, err := tgbotapi.NewBotAPI(c.Token)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Couldnot request new bot API", "error", err)
+		os.Exit(1)
 	}
 	slog.Info("Bot inititated", "name", bot.Self.UserName)
 	u := tgbotapi.NewUpdate(0)
@@ -41,24 +57,23 @@ func Run(c BotConfig, ms app.MemeSaviour) {
 	}
 }
 
-func handleMeme(bot *tgbotapi.BotAPI, c BotConfig, update tgbotapi.Update, ms app.MemeSaviour) {
+func handleMeme(bot *tgbotapi.BotAPI, c BotConfig, update tgbotapi.Update, ms app.MemeSaviour) error {
 	photo := update.Message.Photo[len(update.Message.Photo)-1]
-	// Download the photo
 	file, err := bot.GetFile(tgbotapi.FileConfig{FileID: photo.FileID})
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Create a new Meme struct
-
-	meme := app.Meme{
-		Size: app.Size(photo.Width),
-		Link: file.Link(c.Token),
-		Name: strings.ReplaceAll(update.Message.Caption, " ", "_"),
+	fileExt := strings.ToLower(filepath.Ext(file.FilePath))
+	// Create a new Meme
+	mName := strings.ReplaceAll(update.Message.Caption, " ", "_")
+	meme, err := app.NewMeme(mName, fileExt, file.Link(c.Token), []byte{})
+	if err != nil {
+		return err
 	}
 	// Save the Meme struct using the Saviour interface
-	err = ms.SaveMemeTo("mock", meme)
+	err = ms.SaveMemeTo("Local", *meme)
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	return nil
 }
