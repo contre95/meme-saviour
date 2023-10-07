@@ -19,7 +19,8 @@ Configuration can be set using env variables. Storage variables are optional but
 
 Run manually from for testing.
 ```shell
-
+git clone git@github.com:contre95/meme-saviour.git
+TELEGRAM_TOKEN=<telegram-bot-token> LOCAL_STORAGE=1 LOCAL_STORAGE_PATH=./data TELEGRAM_ALLOWED_USERNAMES=<your-username> go run ./main.go
 ```
 
 Run it on a container.
