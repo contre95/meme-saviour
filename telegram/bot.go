@@ -49,26 +49,58 @@ func Run(c BotConfig, ms app.MemeSaviour) {
 			continue
 		}
 		// For some reason Telegram send their gifs as .mp4, so this condition is for when you send the bot a [GIF]
-		if update.Message != nil && update.Message.Document != nil && strings.HasSuffix(update.Message.Document.FileName, ".mp4") {
-			slog.Info("Meme identified")
+		if update.Message != nil && update.Message.Video != nil {
+			slog.Info("Video Meme identified")
+			err := handleVideo(bot, c, update, ms)
+			if err != nil {
+				slog.Error("Could not save meme (Video)", "error", err)
+				bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Could not save meme :( \n\n %s", err)))
+			}
+			slog.Info("Video meme saved 👌")
+			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Video meme saved 👌"))
+		} else if update.Message != nil && update.Message.Document != nil && strings.HasSuffix(update.Message.Document.FileName, ".mp4") {
+			slog.Info("Gif Meme identified")
 			err := handleGif(bot, c, update, ms)
 			if err != nil {
 				slog.Error("Could not save meme (gif)", "error", err)
 				bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Could not save meme :( \n\n %s", err)))
 			}
-		}
-		if update.Message != nil && update.Message.Photo != nil {
-			slog.Info("Meme identified")
+			slog.Info("Gif meme saved 👌")
+			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Gif meme saved 👌"))
+		} else if update.Message != nil && update.Message.Photo != nil {
+			slog.Info("Photo Meme identified")
 			err := handlePhoto(bot, c, update, ms)
 			if err != nil {
 				slog.Error("Could not save meme (photo)", "error", err)
 				bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Could not save meme :( \n\n %s", err)))
 			}
-		} else if update.Message != nil {
-			slog.Info("Message is not a photo.")
+			slog.Info("Photo meme saved 👌")
+			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Photo meme saved 👌"))
+		} else {
 			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Wrong type of meme format please send either a Gif or Photo"))
 		}
 	}
+}
+
+func handleVideo(bot *tgbotapi.BotAPI, c BotConfig, update tgbotapi.Update, ms app.MemeSaviour) error {
+	video := update.Message.Video // Assuming MP4 is sent as a video
+	file, err := bot.GetFile(tgbotapi.FileConfig{FileID: video.FileID})
+	if err != nil {
+		log.Fatal(err)
+	}
+	fileExt := strings.ToLower(filepath.Ext(file.FilePath))
+	// Create a new Meme
+	mName := strings.ReplaceAll(update.Message.Caption, " ", "_")
+	meme, err := app.NewMeme(mName, fileExt, file.Link(c.Token), []byte{})
+	if err != nil {
+		return err
+	}
+	// Save the Meme struct using the Saviour interface
+	err = ms.SaveMemeTo("Local", *meme)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func handleGif(bot *tgbotapi.BotAPI, c BotConfig, update tgbotapi.Update, ms app.MemeSaviour) error {
