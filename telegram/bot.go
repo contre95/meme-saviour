@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"fmt"
 	"log"
 	"log/slog"
 	"meme-saviour/app"
@@ -47,17 +48,51 @@ func Run(c BotConfig, ms app.MemeSaviour) {
 			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Sorry, your username is not allowed."))
 			continue
 		}
+		// For some reason Telegram send their gifs as .mp4, so this condition is for when you send the bot a [GIF]
+		if update.Message != nil && update.Message.Document != nil && strings.HasSuffix(update.Message.Document.FileName, ".mp4") {
+			slog.Info("Meme identified")
+			err := handleGif(bot, c, update, ms)
+			if err != nil {
+				slog.Error("Could not save meme (gif)", "error", err)
+				bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Could not save meme :( \n\n %s", err)))
+			}
+		}
 		if update.Message != nil && update.Message.Photo != nil {
 			slog.Info("Meme identified")
-			handleMeme(bot, c, update, ms)
+			err := handlePhoto(bot, c, update, ms)
+			if err != nil {
+				slog.Error("Could not save meme (photo)", "error", err)
+				bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Could not save meme :( \n\n %s", err)))
+			}
 		} else if update.Message != nil {
 			slog.Info("Message is not a photo.")
-			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Please send a message to the chat in order to save a memee."))
+			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Wrong type of meme format please send either a Gif or Photo"))
 		}
 	}
 }
 
-func handleMeme(bot *tgbotapi.BotAPI, c BotConfig, update tgbotapi.Update, ms app.MemeSaviour) error {
+func handleGif(bot *tgbotapi.BotAPI, c BotConfig, update tgbotapi.Update, ms app.MemeSaviour) error {
+	gif := update.Message.Animation // Assuming GIF is sent as an animation
+	file, err := bot.GetFile(tgbotapi.FileConfig{FileID: gif.FileID})
+	if err != nil {
+		log.Fatal(err)
+	}
+	fileExt := strings.ToLower(filepath.Ext(file.FilePath))
+	// Create a new Meme
+	mName := strings.ReplaceAll(update.Message.Caption, " ", "_")
+	meme, err := app.NewMeme(mName, fileExt, file.Link(c.Token), []byte{})
+	if err != nil {
+		return err
+	}
+	// Save the Meme struct using the Saviour interface
+	err = ms.SaveMemeTo("Local", *meme)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func handlePhoto(bot *tgbotapi.BotAPI, c BotConfig, update tgbotapi.Update, ms app.MemeSaviour) error {
 	photo := update.Message.Photo[len(update.Message.Photo)-1]
 	file, err := bot.GetFile(tgbotapi.FileConfig{FileID: photo.FileID})
 	if err != nil {
@@ -73,7 +108,7 @@ func handleMeme(bot *tgbotapi.BotAPI, c BotConfig, update tgbotapi.Update, ms ap
 	// Save the Meme struct using the Saviour interface
 	err = ms.SaveMemeTo("Local", *meme)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	return nil
 }
